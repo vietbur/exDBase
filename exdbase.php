@@ -6,20 +6,40 @@ class exDBase
     private $limit = '';
 	public $error='';
     public $query='';
-
+    
+    /**
+     * Инициирует новый объект класса exDBase и присоединяется к базе данных MySQL
+     * все параметры стандартные как для создания нового объекта mysqli
+     * если параметр $utf установлен в true, будет осуществлена настройка сортировки и вывода данных таблиц в формате Unicode
+     *
+     * @param string $host
+     * @param string $username
+     * @param string $passwd
+     * @param string $dbname
+     * @param boolean $utf
+     * @param boolean $port
+     * @param boolean $socket
+     */
 	public function __construct ($host, $username, $passwd, $dbname = "", $utf = true, $port = false, $socket = false)
-    // инициирует новый объект класса exDBase и присоединяется к базе данных MySQL
-    // все параметры стандартные как для создания нового объекта mysqli
-    // если параметр $utf установлен в true, будет осуществлена настройка сортировки и вывода данных таблиц в формате Unicode
 	{
         $this->open ($host, $username, $passwd, $dbname, $utf, $port, $socket);
 	} 
 
+    /**
+     * Создает новое подключение к базе данных MySQL, предварительно закрывая старое подключение, если оно открыто.
+     * все параметры стандартные как для создания объекта mysqli
+     * если параметр $utf установлен в true, будет осуществлена настройка сортировки и вывода данных таблиц в формате Unicode
+     *
+     * @param string $host
+     * @param string $username
+     * @param string $passwd
+     * @param string $dbname
+     * @param boolean $utf
+     * @param boolean $port
+     * @param boolean $socket
+     * @return void
+     */
     public function open ($host, $username, $passwd, $dbname = "", $utf = true, $port = false, $socket = false)
-    // Создает новое подключение к базе данных MySQL, предварительно закрывая старое подключение, если оно открыто.
-    // все параметры стандартные как для создания объекта mysqli
-    // если параметр $utf установлен в true, будет осуществлена настройка сортировки и вывода данных таблиц 
-    // в формате Unicode
     {
         if ($this->DB)
             $this->close();
@@ -38,8 +58,10 @@ class exDBase
         return true;
     }
     
+    /**
+     * Если имеется установленное соединение с базой MySQL, то закрывает его
+     */
     public function close ()
-    // Если имеется установленное соединение с базой MySQL, то закрывает его
     {
         if ($this->DB)
             $this->DB->close();
@@ -48,8 +70,13 @@ class exDBase
         $this->query = '';
     }
     
+    /**
+     * Вспомогательная функция. Парсит знаки сравнения для параметра WHERE
+     *
+     * @param string $value
+     * @return void
+     */
     public function checkSign ($value)
-    // Вспомогательная функция. Парсит знаки сравнения для параметра WHERE
     {
         $signs = array (">=", "<=", "<>", ">", "<", "=", "!=");
         $value = trim ($value);
@@ -78,8 +105,15 @@ class exDBase
         return $result;
     }
 
+    /**
+     * Вспомогательная функция. 
+     * Добавляет одинарные (или двойные если $double=true) кавычки в начале и в конце строки, если $value является строкой
+     *
+     * @param string $value
+     * @param boolean $double
+     * @return void
+     */
     protected function quoted ($value, $double = false)
-    // Вспомогательная функция. Добавляет одинарные (или двойные если $double=true) кавычки в начале и в конце строки, если $value является строкой
     {
         if (!is_string($value))
             return $value;
@@ -89,9 +123,15 @@ class exDBase
             return "'" . $value . "'";
     }
 
+    /**
+     * Экранирует служебные символы в строке, тем самым не давая возможности инъекций в MySQL
+     * Если $escape установлен в false, то экранирования не происходит
+     *
+     * @param string $value
+     * @param boolean $escape
+     * @return void
+     */
     protected function escape($value, $escape = true)
-    // экранирует служебные символы в строке, тем самым не давая возможности инъекций в MySQL
-    // если $escape установлен в false, то экранирования не происходит
     {
         if (!$escape )
             return $value;
@@ -104,29 +144,46 @@ class exDBase
             return str_replace(array("'",'"'), '', $value);
     }
     
+    /**
+     * Устанавливает флаг ошибки в случае, если в запросе не определено имя таблицы
+     *
+     * @return void
+     */
     protected function noTable ()
-    // устанавливает флаг ошибки в случае, если в запросе не определено имя таблицы
     {
         $this->error = "No table specified";
         return false;
     }
     
+    /**
+     * Устанавливает флаг ошибки в случае, если в запросе отсутствуют необходимые поля данных или они ошибочны
+     *
+     * @return void
+     */
     protected function noData ()
-    // устанавливает флаг ошибки в случае, если в запросе отсутствуют необходимые поля данных или они ошибочны
     {
         $this->error = "No fields/data specified";
         return false;
     }
     
+    /**
+     * Устанавливает флаг ошибки при запросе в случае, если база данных не открыта
+     *
+     * @return void
+     */
     protected function noDB ()
-    // устанавливает флаг ошибки при запросе в случае, если база данных не открыта
     {
         $this->error = "No database open";
         return false;
     }
     
+    /**
+     * Выполняет запрос $qry в текущую открытую базу MySQL, возвращает его результат или false в случае неудачи
+     *
+     * @param string $qry
+     * @return void
+     */
     function query ($qry)
-    // Выполняет запрос $qry в текущую открытую базу MySQL, возвращает его результат или false в случае неудачи
     {
         if ($this->DB)
         {
@@ -138,14 +195,20 @@ class exDBase
         else return $this->noDB(); 
     }
     
+    /**
+     * Вспомогательная функция
+     * Разбирает набор параметров в строку, алгоритм зависит от параметра $type
+     * $type = 0 - тип SELECT WHERE, результат в виде FIELD1='value1' AND/OR FIELD2>= value2
+     * $type = 1 - тип INSERT, результат в виде (FIELD1, FIELD2) ('value1', value2)
+     * $type = 2 - тип UPDATE, результат в виде "FIELD1=value1, FIELD2='value2'" 
+     * $type = 3 - тип поля ORDER BY, результат в виде "FIELD1 value1, FIELD2 value2"   
+     * $type = 4 - обычная разворотка, результат в виде "value1, value2, value3"
+     *
+     * @param $fields
+     * @param integer $type
+     * @return void
+     */
 	public function parse ($fields, $type = 0)
-    // Вспомогательная функция
-    // разбирает набор параметров в строку, алгоритм зависит от параметра $type
-    // $type = 0 - тип SELECT WHERE, результат в виде FIELD1='value1' AND/OR FIELD2>= value2
-    // $type = 1 - тип INSERT, результат в виде (FIELD1, FIELD2) ('value1', value2)
-    // $type = 2 - тип UPDATE, результат в виде "FIELD1=value1, FIELD2='value2'" 
-    // $type = 3 - тип поля ORDER BY, результат в виде "FIELD1 value1, FIELD2 value2"   
-    // $type = 4 - обычная разворотка, результат в виде "value1, value2, value3"
 	{
         if (is_string($fields))
             return $fields;
@@ -202,13 +265,21 @@ class exDBase
            $this->limit = " LIMIT " . $limit; 
     }
     
+    /**
+     * Внутренняя функция. Используйте fetchFirst или fetchArray
+     * Метод для выбора значений из таблицы, возвращает ссылку на массив данных как в mysqli
+     * $table - имя таблицы
+     * $where - либо false (тогда выбираются все значения) либо массив вида ('FIELD' = > value, ...), либо строка вида "FIELD = value, ..."
+     * $fields - поля для выбора, массив вида array ('FIELD1', 'FIELD2', ...) либо строка "FIELD1, FIELD2, ..."
+     * $order - порядок сортировки, массив вида array ('FIELD1' =>'ASC', 'FIELD2'=>'DESC') либо строка
+     *
+     * @param string $table
+     * @param boolean $where
+     * @param string $fields
+     * @param boolean $order
+     * @return void
+     */
     public function select ($table, $where = false, $fields = '*', $order = false)
-    // Внутренняя функция. Используйте fetchFirst или fetchArray
-    // Метод для выбора значений из таблицы, возвращает ссылку на массив данных как в mysqli
-    // $table - имя таблицы
-    // $where - либо false (тогда выбираются все значения) либо массив вида ('FIELD' = > value, ...), либо строка вида "FIELD = value, ..."
-    // $fields - поля для выбора, массив вида array ('FIELD1', 'FIELD2', ...) либо строка "FIELD1, FIELD2, ..."
-    // $order - порядок сортировки, массив вида array ('FIELD1' =>'ASC', 'FIELD2'=>'DESC') либо строка
     {
         $result = false;
         $fields = $this->parse ($fields, 4);
@@ -228,8 +299,16 @@ class exDBase
 		return $this->query ($qry);
     }
     
+    /**
+     * То же самое, что метод select, но выбор только первого элемента, возвращает асссоциативный массив для первой записи
+     *
+     * @param string $table
+     * @param boolean $where
+     * @param string $fields
+     * @param boolean $order
+     * @return void
+     */
     function fetchFirst ($table, $where = false, $fields = '*', $order = false)
-    // то же самое, что метод select, но выбор только первого элемента, возвращает асссоциативный массив для первой записи
     {
         $result = false;
         if ($res = $this->select($table, $where, $fields, $order))
@@ -239,8 +318,15 @@ class exDBase
         return $result;
     }
 
+    /**
+     * Метод для выбора значений из таблицы, возвращает ссылку на массив ассоциативных массивов всех данных
+     *
+     * @param string $table
+     * @param boolean $where
+     * @param string $fields
+     * @param boolean $order
+     */
     function fetchArray ($table, $where = false, $fields = '*', $order = false)
-    // метод для выбора значений из таблицы, возвращает ссылку на массив ассоциативных массивов всех данных
     {
         $result = false;
 		if ($res = $this->select($table, $where, $fields, $order))
@@ -251,8 +337,15 @@ class exDBase
         return $result;
     }
 
+    /**
+     * То же самое, что и fetchArray только возвращает данные в виде массива объектов
+     *
+     * @param string $table
+     * @param boolean $where
+     * @param boolean $order
+     * @return array
+     */
     function fetchObject ($table, $where = false, $order = false)
-    // то же самое, что и fetchArray только возвращает данные в виде массива объектов
     {
         $result = false;
 		if ($res = $this->select($table, $where, '*', $order))
@@ -263,9 +356,15 @@ class exDBase
 		}
     }
     
+    /**
+     * Выбирает из результатов запроса только идентификаторы, по умолчанию поле ID, но можно задать в переменной $id и другое имя поля
+     *
+     * @param string $table
+     * @param boolean $where
+     * @param string $id
+     * @param boolean $order
+     */
     function fetchIDs ($table, $where = false, $id="ID", $order = false)
-    // выбирает из результатов запроса только идентификаторы, по умолчанию поле ID, но можно задать в переменной
-    // $id и другое имя поля
     {
         $result = false;
 		if ($res = $this->select($table, $where, $id, $order))
@@ -276,8 +375,14 @@ class exDBase
         return $result;
     }
 
+    /**
+     * Обновление данных в таблице $table, поля и значения задаются ассоциативным массивом или строкой
+     *
+     * @param string $table
+     * @param boolean $where
+     * @param boolean $fields
+     */
     function update ($table, $where = false, $fields = false)
-    // обновление данных в таблице $table, поля и значения задаются ассоциативным массивом или строкой
     {
         if (!is_array ($fields))
             return $this->noData();
@@ -297,9 +402,15 @@ class exDBase
             return $this->noData();
 	} 
     
+    /**
+     * Вставка новой записи в таблицу $table, поля и значения задаются ассоциативным массивом или строкой
+     * Возвращает идентификатор вставленной записи
+     *
+     * @param [type] $table
+     * @param boolean $fields
+     * @param boolean $replace
+     */
     function insert ($table, $fields = false, $replace = false)
-    // вставка новой записи в таблицу $table, поля и значения задаются ассоциативным массивом или строкой
-    // возвращает идентификатор вставленной записи
 	{
         if (!is_array ($fields))
             return $this->noData();
@@ -319,21 +430,35 @@ class exDBase
         }
         else return $this->noData();
 	} 
-  
+    
+    /**
+     * Замена существующей записи в таблицу $table, поля и значения задаются ассоциативным массивом или строкой
+     *
+     * @param string $table
+     * @param boolean $fields
+     */
     function replace ($table, $fields = false)
-    // замена существующей записи в таблицу $table, поля и значения задаются ассоциативным массивом или строкой
 	{
 		return $this->insert ($table, $fields, true);
 	}
 
+    /**
+     * Возвращает номер последней вставленной записи
+     *
+     * @return int
+     */
     function insertID ()
-    // возвращает номер последней вставленной записи
 	{
 		return $this->DB->insert_id;
 	}
 
+    /**
+     * Удаление строки из таблицы $table
+     *
+     * @param string $table
+     * @param boolean $where
+     */
     function delete ($table, $where = false)
-    // удаление строки из таблицы $table
     {
         $table = $this->escape($table); 
         if (!$table)
@@ -345,13 +470,22 @@ class exDBase
         return $this->query ($qry);
 	} 
     
+    /**
+     * Cоздает новую таблицу с именем $table если она не существует либо если $exists = false
+     * в переменной $fields заданы поля в виде ассоциативного массива. Их тип во вновь создаваемой таблице 
+     * вычисляется по типу значений. Либо, можно задать типы напрямую если значения имеют строковый вид типа
+     * _VARCHAR(255) или _TINYINT (1), то есть начинаются с символа '_'
+     * $keyPrimary - имя поля первичного ключа
+     * $autoInc - массив полей, которые должны иметь автоинкремент
+     *
+     * @param string $table
+     * @param boolean $fields
+     * @param boolean $defaults
+     * @param boolean $keyPrimary
+     * @param boolean $autoInc
+     * @param boolean $exists
+     */
     function createEasy ($table, $fields = false, $defaults = false, $keyPrimary = false, $autoInc = false, $exists = true)
-    // создает новую таблицу с именем $table если она не существует либо если $exists = false
-    // в переменной $fields заданы поля в виде ассоциативного массива. Их тип во вновь создаваемой таблице 
-    // вычисляется по типу значений. Либо, можно задать типы напрямую если значения имеют строковый вид типа
-    // _VARCHAR(255) или _TINYINT (1), то есть начинаются с символа '_'
-    // $keyPrimary - имя поля первичного ключа
-    // $autoInc - массив полей, которые должны иметь автоинкремент
     {
         $result = false;
         if (empty ($fields) or !is_array ($fields))
