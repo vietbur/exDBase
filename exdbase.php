@@ -430,8 +430,7 @@ class exDBase
 			else
 				$exists = '';
             $sql = "CREATE TABLE $exists $table ($str $primary) ENGINE=InnoDB, CHARACTER SET = 'utf8', CONNECTION = 'utf8_general_ci'";
-            // $result = $this->DB->query ($sql);
-            $result = $sql;
+            $result = $this->DB->query ($sql);
         }
     	return $result;
 	} 
